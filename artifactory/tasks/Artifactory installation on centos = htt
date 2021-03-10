@@ -1,0 +1,5 @@
+Artifactory installation on centos = https://www.centlinux.com/2019/01/install-jfrog-artifactory-on-centos-rhel-7.html
+
+docker run --name artifactory -d -p 8086:8081 \
+  -v /jfrog/artifactory:/var/opt/jfrog/artifactory \
+  docker.bintray.io/jfrog/artifactory-oss:latest

@@ -1,0 +1,101 @@
+#!/bin/bash
+#set -xv
+echo -n "Enter the user: "
+read user
+echo -n "Enter Java version: "
+read "JavaVersion"
+echo -n "Enter Apache Tomcat Major Version: "
+read "TomcatMajorVersion"
+echo -n "Enter Tomcat Minor Version: "
+read "TomcatMinorVersion"
+export software_dir=/home/$user
+export tomcat_tar=apache-tomcat-${TomcatMinorVersion}.tar.gz
+export java_tar=openlogic-openjdk-${JavaVersion}-linux-x64.tar.gz
+export apache_dir=/opt/app
+export deployment_dir=/home/$user/tomcat-deployment
+
+#Checking if installer tarballs are present or not. If they are not found, script will print error message & quit.
+
+osrelease=$(grep -w 'ID' /etc/os-release | cut -d'=' -f2)
+
+function download() {
+    wget https://downloads.apache.org/tomcat/tomcat-${TomcatMajorVersion}/v${TomcatMinorVersion}/bin/apache-tomcat-${TomcatMinorVersion}.tar.gz
+    wget https://builds.openlogic.com/downloadJDK/openlogic-openjdk/${JavaVersion}/openlogic-openjdk-${JavaVersion}-linux-x64.tar.gz
+    echo "Unpacking Java installer tarball......."
+    sudo tar -xzvf $software_dir/$java_tar
+    echo "Java tarball unpacked."
+    echo "Unpacking Tomcat installer tarball......."
+    sudo tar -xzvf $software_dir/$tomcat_tar
+    echo "Tomcat tarball unpacked."
+    echo "Installing Java & Tomcat to $apache_dir directory...."
+    sudo cp -rp $software_dir/openlogic-openjdk-${JavaVersion}-linux-64 $apache_dir/
+    sudo cp -rp $software_dir/apache-tomcat-${TomcatMinorVersion} $apache_dir/
+    sudo cp $software_dir/Spring3HibernateApp.war $apache_dir/apache-tomcat-${TomcatMinorVersion}/webapps/
+    sudo chown -R $user:$user $apache_dir/apache-tomcat-${TomcatMinorVersion}
+    echo "Exporting necessary variables......"
+    export JAVA_HOME=$apache_dir/openlogic-openjdk-${JavaVersion}-linux-64
+    export PATH=$PATH:$apache_dir/openlogic-openjdk-${JavaVersion}-linux-64/bin
+    export CATALINA_HOME=$apache_dir/apache-tomcat-${TomcatMinorVersion}
+    echo "Variables exported."
+    echo $JAVA_HOME
+    echo $PATH
+    echo $CATALINA_HOME
+    echo "Checking Java & Tomcat versions."
+    echo "Java is installed at $(which java) Directory"
+    java -version
+    java -cp $CATALINA_HOME/lib/catalina.jar org.apache.catalina.util.ServerInfo
+    echo "Starting Tomcat server"
+    sudo cp $deployment_dir/tomcat.service /etc/systemd/system/tomcat.service
+    sudo systemctl daemon-reload
+    sudo systemctl start tomcat.service
+    sudo systemctl status tomcat.service
+}
+
+if [[ "$osrelease" == "ubuntu" ]]
+then
+    echo "========= updating operating system packages =========="
+    sudo apt update -y
+    sudo apt upgrade -y
+    which wget
+    if [[ "$?" -ne "0" ]]
+    then
+        echo "==============Installing wget================="
+        sudo apt install wget -y
+        exit
+    else
+        download
+    fi
+elif [[ "$osrelease" == '"centos"' ]]
+then
+    echo "========= updating operating system packages =========="
+    sudo yum update -y
+    which wget
+    if [[ "$?" -ne "0" ]]
+    then
+        echo "==============Installing wget================="
+        sudo yum install wget -y
+        exit
+    else
+        download
+    fi
+elif [[ "$osrelease" == '"amzn"' ]]
+then
+   echo "================updating packages==============="
+   sudo yum update -y
+   which wget
+   if [[ "$?" -ne "0" ]]
+   then
+       echo "======================installing wget=================="
+       sudo yum install wget -y
+       exit
+   else
+       download
+   fi
+else
+        echo "Installer tarballs not found in $software_dir/. Please make sure they exist there. Exiting installation process now."
+        exit
+fi
+
+echo "Now Deleting the Tarballs From the System"
+sudo rm -rf $software_dir/apache-tomcat-${TomcatMinorVersion}  $software_dir/openlogic-openjdk-${JavaVersion}-linux-64
+sudo rm $software_dir/apache-tomcat-${TomcatMinorVersion}.tar.gz $software_dir/openlogic-openjdk-${JavaVersion}-linux-x64.tar.gz

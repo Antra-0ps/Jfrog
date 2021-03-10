@@ -1,0 +1,82 @@
+---
+# defaults file for egeneralov.jfrog-artifactory
+
+ja_repo: "deb https://jfrog.bintray.com/artifactory-pro-debs {{ ansible_distribution_release }} main"
+
+ja_key:
+  server: keyserver.ubuntu.com
+  id: 6B219DCCD7639232
+
+ja_manage_db: true
+
+ja_version: 6.9.0
+
+ja_db:
+  type: postgresql
+  driver_version: 42.2.5
+  host: 127.0.0.1
+  port: 5432
+  name: artifactory
+  user: artifactory
+  password: artifactory
+
+
+ja_database_vars:
+  pgdg_users:
+    - user: "{{ ja_db.user }}"
+      password: "{{ ja_db.password }}"
+      database: "{{ ja_db.name }}"
+  pgdg_postgresql_conf:
+    - { "k": "listen_addresses", "v": "'127.0.0.1'" }
+    - { "k": "port", "v": "{{ ja_db.port }}" }
+    - { "k": "shared_buffers", "v": "2GB" }
+    - { "k": "work_mem", "v": "31MB" }
+    - { "k": "maintenance_work_mem", "v": "256MB" }
+    - { "k": "effective_io_concurrency", "v": "200" }
+    - { "k": "max_worker_processes", "v": "15" }
+    - { "k": "max_parallel_workers_per_gather", "v": "2" }
+    - { "k": "wal_buffers", "v": "16MB" }
+    - { "k": "max_wal_size", "v": "2GB" }
+    - { "k": "min_wal_size", "v": "512MB" }
+    - { "k": "random_page_cost", "v": "1.1" }
+    - { "k": "effective_cache_size", "v": "1536MB" }
+    - { "k": "default_statistics_target", "v": "500" }
+    - { "k": "max_locks_per_transaction", "v": "64" }
+    - { "k": "max_connections", "v": "100" }
+    - { "k": "checkpoint_completion_target", "v": "0.7" }
+#     - { "k": "", "v": "" }
+  pgdg_pg_hba_conf:
+    - {
+        "connection_type": "local",
+        "database": "all",
+        "user": "all",
+        "address": "",
+        "method": "peer"
+      }
+    - {
+        "connection_type": "host",
+        "database": "all",
+        "user": "all",
+        "address": "127.0.0.1/32",
+        "method": "md5"
+      }
+  pgdg_supported_versions:
+    - 9.4
+    - 9.5
+    - 9.6
+
+
+ja_supported_os:
+  - Debian
+
+ja_supported_os_releases:
+  - stretch
+
+ja_supported_db:
+  - postgresql
+
+ja_initial_wizard:
+  version: 1
+  GeneralConfiguration:
+    ## License key to import in onboarding
+    licenseKey : "Enter your license key"

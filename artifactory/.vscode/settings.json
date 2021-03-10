@@ -1,0 +1,5 @@
+{
+    "css.lint.duplicateProperties": "warning",
+    "markdown.trace": "verbose",
+    "http.proxyStrictSSL": false
+}
